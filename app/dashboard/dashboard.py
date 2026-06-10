@@ -67,6 +67,66 @@ vol_fig=px.line(
             )
 
 st.plotly_chart(vol_fig,width="stretch")
+st.divider()
+
+st.subheader("Analytics")
+
+from app.analytics.analyzer import(
+    load_all_data,
+    calculate_moving_average,
+    calculate_volatility,
+    calculate_correlation
+)
+
+analytics_coin=st.selectbox(
+    "Select coin",
+    ["bitcoin","ethereum","solana","ripple"],
+    key="coin_select"
+)
+
+analytics_df=load_all_data()
+st.markdown("#### Moving Averages")
+ma_df=calculate_moving_average(analytics_df,analytics_coin)
+
+ma_fig=px.line(
+    ma_df,
+    x="timestamp",
+    y=["price","MA_7","MA_30"],
+    title=f"{analytics_coin.capitalize()} Price & Moving Averages",
+    labels={"value":"Price(USD)","timestamp":"Time"},
+    template="plotly_dark"
+)
+st.plotly_chart(ma_fig)
+
+# ── Volatility Chart ──
+st.markdown("#### Volatility")
+vol_df = calculate_volatility(analytics_df,analytics_coin)
+
+fig_vol = px.line(
+    vol_df,
+    x="timestamp",
+    y="volatility",
+    title=f"{analytics_coin.capitalize()} — Rolling Volatility",
+    labels={"volatility": "Volatility", "timestamp": "Time"},
+    template="plotly_dark"
+)
+fig_vol.update_traces(line_color="#ff6b6b")
+st.plotly_chart(fig_vol)
+
+# ── Correlation Matrix ──
+st.markdown("#### Correlation Matrix")
+corr = calculate_correlation(analytics_df)
+
+fig_corr = px.imshow(
+    corr,
+    title="Price Correlation Between Coins",
+    template="plotly_dark",
+    color_continuous_scale="RdYlGn",
+    zmin=-1,
+    zmax=1,
+    text_auto=True
+)
+st.plotly_chart(fig_corr)
 
 st.divider()
 
