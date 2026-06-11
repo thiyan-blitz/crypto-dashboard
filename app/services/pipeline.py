@@ -1,6 +1,7 @@
 from app.services.fetcher import fetch_crypto_data
 from app.services.transformer import transform_crypto_data
 from app.database.writer import write_crypto_data
+from app.services.alerts import run_alerts
 
 def run_pipeline():
     raw_data=fetch_crypto_data()
@@ -15,6 +16,7 @@ def run_pipeline():
 
     if not success:
         return False
+    run_alerts(records)
     print("Pipeline executed successfully!!")
     return True
 
