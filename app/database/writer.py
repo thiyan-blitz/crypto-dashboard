@@ -1,37 +1,25 @@
-from app.database.connection import get_connection
+from app.database.connection import get_sqlengine
+from sqlalchemy import text
 
 def write_crypto_data(records):
-    conn=get_connection()
-    if not conn:
-        print("No database connection exist")
+    engine=get_sqlengine()
+    if not engine:
+        print("No database engine exist")
         return False
     try:
-        cursor=conn.cursor()
+        with engine.begin() as conn:
 
-        insert_query="""
+            insert_query=text("""
                 INSERT INTO crypto_prices 
                 (coin,price,market_cap,volume,price_change_24h,timestamp)
-                VALUES (%s,%s,%s,%s,%s,%s)"""
+                VALUES (:coin, :price, :market_cap, :volume, :price_change_24h, :timestamp)""")
         
-        for record in records:
-            cursor.execute(insert_query,(
-                record["coin"],
-                record["price"],
-                record["market_cap"],
-                record["volume"],
-                record["price_change_24h"],
-                record["timestamp"]
-            ))
-        conn.commit()
+            conn.execute(insert_query, records)
         print(f"{len(records)} records inserted successfully.")
         return True
     except Exception as e:
-        conn.rollback()
         print(f"Failed to write data to database: {e}")
         return False
-    finally:
-        cursor.close()
-        conn.close()
 
 if __name__=="__main__":
     sample_records=[

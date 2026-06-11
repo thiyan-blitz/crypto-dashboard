@@ -9,7 +9,7 @@ def scheduled_job():
     run_pipeline()
 
 if __name__=="__main__":
-    print("Scheduler started! Fetching evry 5 minutes...")
+    print("Scheduler started! Fetching every 1 minute...")
     print("Press Ctrl+C to stop.")
     run_pipeline()
     scheduler.start()
