@@ -1,7 +1,7 @@
 import requests
 import os
 from dotenv import load_dotenv
-from app.database.connection import get_connection
+from app.database.connection import get_sqlengine
 import pandas as pd
 
 load_dotenv()
@@ -53,14 +53,13 @@ def check_price_alerts(data):
             )
         
 def check_volume_spike(data):
-    conn=get_connection()
+    engine=get_sqlengine()
     query="""
         SELECT coin,AVG(volume) as avg_volume
         FROM crypto_prices
         GROUP BY coin"""
             
-    avg_df=pd.read_sql(query,conn)
-    conn.close()
+    avg_df=pd.read_sql(query,engine)
 
     for record in data:
         coin=record["coin"]

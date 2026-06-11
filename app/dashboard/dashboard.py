@@ -5,21 +5,20 @@ import streamlit as st
 import plotly.express as px
 import pandas as pd
 
-from app.database.connection import get_connection
+from app.database.connection import get_sqlengine
 
 st.set_page_config(
     page_title="Crypto Dashboard"
 )
 
 def load_data():
-    conn=get_connection()
+    engine=get_sqlengine()
     query="""
             SELECT coin,price,market_cap,volume,price_change_24h,timestamp
             FROM crypto_prices
             ORDER BY timestamp DESC
         """
-    df=pd.read_sql(query,conn)
-    conn.close()
+    df=pd.read_sql(query,engine)
     return df
 
 def get_latest(df):

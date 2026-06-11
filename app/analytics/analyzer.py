@@ -1,15 +1,14 @@
 import pandas as pd
 import numpy as np
-from app.database.connection import get_connection
+from app.database.connection import get_sqlengine
 
 def load_all_data():
-    conn=get_connection()
+    engine=get_sqlengine()
     query="""
             SELECT coin,price,volume,price_change_24h,timestamp
             FROM crypto_prices
             ORDER BY timestamp ASC"""
-    df=pd.read_sql(query,conn)
-    conn.close()
+    df=pd.read_sql(query,engine)
     return df
 
 def calculate_moving_average(df,coin):
