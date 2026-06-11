@@ -18,7 +18,7 @@ def transform_crypto_data(raw_data):
                 "coin":c,
                 "price":v.get("usd",0),
                 "volume":v.get("usd_24h_vol",0),
-                "market_cap":v.get("usd_market_gap",0),
+                "market_cap":v.get("usd_market_cap",0),
                 "price_change_24h":v.get("usd_24h_change",0),
                 "timestamp":datetime.now()
             }
