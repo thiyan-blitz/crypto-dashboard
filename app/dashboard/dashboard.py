@@ -85,25 +85,34 @@ st.plotly_chart(vol_fig)
 
 st.subheader("Analytics")
 
-analytics_coin=st.selectbox(
+# ── Time Filter ──
+time_filter = st.selectbox(
+    "Select time range",
+    ["Today", "This Week", "This Month"],
+    key="time_filter"
+)
+
+analytics_df = load_all_data()
+
+# Apply time filter
+from datetime import datetime, timedelta
+now = datetime.now()
+
+if time_filter == "Today":
+    cutoff = now - timedelta(days=1)
+elif time_filter == "This Week":
+    cutoff = now - timedelta(weeks=1)
+elif time_filter == "This Month":
+    cutoff = now - timedelta(days=30)
+
+analytics_df["timestamp"] = pd.to_datetime(analytics_df["timestamp"])
+analytics_df = analytics_df[analytics_df["timestamp"] >= cutoff]
+
+analytics_coin = st.selectbox(
     "Select coin",
-    ["bitcoin","ethereum","solana","ripple"],
+    ["bitcoin", "ethereum", "solana", "ripple"],
     key="coin_select"
 )
-
-analytics_df=load_all_data()
-st.markdown("#### Moving Averages")
-ma_df=calculate_moving_average(analytics_df,analytics_coin)
-
-ma_fig=px.line(
-    ma_df,
-    x="timestamp",
-    y=["price","MA_7","MA_30"],
-    title=f"{analytics_coin.capitalize()} Price & Moving Averages",
-    labels={"value":"Price(USD)","timestamp":"Time"},
-    template="plotly_dark"
-)
-st.plotly_chart(ma_fig)
 
 # ── Volatility Chart ──
 st.markdown("#### Volatility")
