@@ -4,11 +4,17 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../.
 import streamlit as st
 import plotly.express as px
 import pandas as pd
-
+from app.analytics.analyzer import(
+    load_all_data,
+    calculate_moving_average,
+    calculate_volatility,
+    calculate_correlation
+)
 from app.database.connection import get_sqlengine
 
 st.set_page_config(
-    page_title="Crypto Dashboard"
+    page_title="Crypto Dashboard",
+    layout="wide"
 )
 
 def load_data():
@@ -40,10 +46,10 @@ for i,(coin,emoji) in enumerate(zip(coins,emojis)):
     if not row.empty:
         price=row["price"].values[0]
         change=row["price_change_24h"].values[0]
-        delta_color="normal"
         cols[i].metric(label=f"{emoji} {coin.capitalize()}",
                        value=f"${price:,.2f}",
-                       delta=f"{change:.2f}%"
+                       delta=f"{change:.2f}%",
+                       delta_color="normal"
                        )
 st.divider()
 
@@ -51,12 +57,13 @@ st.subheader("Price Trends")
 
 selected_coin=st.selectbox(
     "Select coin",
-    ["bitcoin","ethereum","solana","ripple"]
+    ["bitcoin","ethereum","solana","ripple"],
+    key="price_coin"
 )
 
 coin_df=df[df["coin"]==selected_coin].sort_values("timestamp")
 
-vol_fig=px.line(
+fig=px.line(
             coin_df,
             x="timestamp",
             y="price",
@@ -64,18 +71,19 @@ vol_fig=px.line(
             labels={"price":"Price(USD)","timestamp":"Time"},
             template="plotly_dark"
             )
+fig.update_traces(line_color="#00ff88", line_width=2)
+st.plotly_chart(fig)
 
-st.plotly_chart(vol_fig,width="stretch")
-st.divider()
+vol_fig = px.bar(
+    latest,
+    x="coin",
+    y="volume",
+    title="Trading Volume by Coin",
+    color="coin"
+)
+st.plotly_chart(vol_fig)
 
 st.subheader("Analytics")
-
-from app.analytics.analyzer import(
-    load_all_data,
-    calculate_moving_average,
-    calculate_volatility,
-    calculate_correlation
-)
 
 analytics_coin=st.selectbox(
     "Select coin",
@@ -131,8 +139,7 @@ st.divider()
 
 st.subheader("Latest Records")
 st.dataframe(
-    latest[["coin","price","market_cap","volume","price_change_24h","timestamp"]],
-    width="stretch"
+    latest[["coin","price","market_cap","volume","price_change_24h","timestamp"]]
 )
 
 st.caption("Dashboard refreshes every 5 minutes")

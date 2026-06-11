@@ -26,10 +26,13 @@ def calculate_volatility(df,coin):
     return coin_df
 
 def calculate_correlation(df):
+    df = df.copy()
+    df["timestamp"] = pd.to_datetime(df["timestamp"]).dt.round("5min")
     pivot=df.pivot_table(
         index="timestamp",
         columns="coin",
-        values="price"
+        values="price",
+        aggfunc="mean"
     )
     correlation=pivot.corr()
     return correlation
