@@ -28,7 +28,7 @@ def get_holdings():
     query="""
         SELECT coin,
                sum(quantity) as total_quantity,
-               AVG(buy_price) as avg_buy_price
+               SUM(quantity*buy_price)/SUM(quantity) as avg_buy_price
         FROM portfolio
         GROUP BY coin
     """

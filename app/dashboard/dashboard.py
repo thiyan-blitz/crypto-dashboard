@@ -10,6 +10,7 @@ from app.analytics.analyzer import(
     calculate_volatility,
     calculate_correlation
 )
+from app.services.portfolio import get_portfolio_performance,add_holding
 from app.database.connection import get_sqlengine
 
 st.set_page_config(
@@ -151,4 +152,68 @@ st.dataframe(
     latest[["coin","price","market_cap","volume","price_change_24h","timestamp"]]
 )
 
+st.divider()
+
+st.subheader("Portfolio Performance")
+st.markdown("### Add Holding")
+col1,col2,col3=st.columns(3)
+
+with col1:
+    p_coin=st.selectbox("Select coin",["bitcoin","ethereum","solana","ripple"],key="portfolio_coin")
+
+with col2:
+    p_quantity=st.number_input("Quantity",min_value=0.0,step=0.01,format="%.4f")
+with col3:
+    p_buyprice=st.number_input("Buy Price (USD)",min_value=0.0,step=0.01,format="%.2f")
+if st.button("Add to Portfolio"):
+    if p_quantity>0 and p_buyprice>0:
+        success=add_holding(p_coin,p_quantity,p_buyprice)
+        if success:
+            st.success(f"Added {p_quantity} {p_coin} at ${p_buyprice}!")
+        else:
+            st.error("Failed to add holding!")
+
+st.divider()
+st.markdown("#### Portfolio Performance")
+perf=get_portfolio_performance()
+
+if perf.empty:
+    st.info("No holdings yet-add some above!")
+else:
+    total_invested=perf["invested_value"].sum()
+    total_current=perf["current_value"].sum()
+    total_pnl=perf["profit_loss"].sum()
+    total_pnl_pct=(total_current-total_invested)/total_invested*100
+
+    k1, k2, k3 = st.columns(3)
+    k1.metric("Total Invested", f"${total_invested:,.2f}")
+    k2.metric("Current Value", f"${total_current:,.2f}")
+    k3.metric("Total P&L", f"${total_pnl:,.2f}", f"{total_pnl_pct:.2f}%")
+
+    st.divider()
+    st.markdown("#### Holdings Breakdown")
+
+    st.dataframe(
+        perf[[
+            "coin","total_quantity","avg_buy_price",
+            "current_value","profit_loss","profit_loss_pct"
+        ]].rename(columns={
+            "coin":"Coin",
+            "total_quantity": "Quantity",
+            "avg_buy_price": "Avg Buy Price",
+            "current_value": "Current Value",
+            "profit_loss": "P&L (USD)",
+            "profit_loss_pct": "P&L (%)"
+        })
+    )
+
+    st.markdown("#### Portfolio allocation")
+
+    fig_pie=px.pie(
+        perf,names="coin",
+        values="current_value",
+        title="Portfolio Allocation by Current Value",
+        template="plotly_dark"
+    )
+    st.plotly_chart(fig_pie)
 st.caption("Dashboard refreshes every 5 minutes")
