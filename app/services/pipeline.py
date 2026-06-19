@@ -2,7 +2,8 @@ from app.services.fetcher import fetch_crypto_data
 from app.services.transformer import transform_crypto_data
 from app.database.writer import write_crypto_data
 from app.services.alerts import run_alerts
-
+from app.services.sentiment_analyzer import run_sentiment_analysis
+from datetime import datetime
 def run_pipeline():
     raw_data=fetch_crypto_data()
     if not raw_data:
@@ -17,6 +18,8 @@ def run_pipeline():
     if not success:
         return False
     run_alerts(records)
+    if datetime.now().minute<5:
+        run_sentiment_analysis()
     print("Pipeline executed successfully!!")
     return True
 

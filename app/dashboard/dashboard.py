@@ -216,4 +216,67 @@ else:
         template="plotly_dark"
     )
     st.plotly_chart(fig_pie)
+
+    st.divider()
+
+    st.subheader("Sentiment Analysis")
+
+    def load_sentiment_data():
+        engine=get_sqlengine()
+        query="""
+            SELECT coin,headline,sentiment_score,sentiment_label,timestamp
+            from sentiment
+            ORDER BY timestamp DESC
+            limit 40"""
+        df=pd.read_sql(query,engine)
+        return df
+    
+    sentiment_df=load_sentiment_data()
+
+    if sentiment_df.empty:
+        st.info("No sentiment data yet-run the sentiment analyzer first!")
+    else:
+        sentiment_coin=st.selectbox(
+            "Select coin for sentiment",
+            ["bitcoin","ethereum","solana","ripple"],
+            key="sentiment_coin"
+        )
+
+        coin_sentiment=sentiment_df[sentiment_df["coin"]==sentiment_coin]
+
+        avg_score=coin_sentiment["sentiment_score"].mean()
+        positive_count=(coin_sentiment["sentiment_label"]=="Positive").sum()
+        negative_count=(coin_sentiment["sentiment_label"]=="Negative").sum()
+        neutral_count=(coin_sentiment["sentiment_label"]=="Neutral").sum()
+
+        s1,s2,s3,s4=st.columns(4)
+        s1.metric("AVg Sentiment Score",f"{avg_score:.3f}")
+        s2.metric("Positive",positive_count)
+        s3.metric("Neutral",neutral_count)
+        s4.metric("negative",negative_count)
+
+        sentiment_counts=coin_sentiment["sentiment_label"].value_counts().reset_index()
+        sentiment_counts.columns=["label","count"]
+
+        fig_sentiment_pie=px.pie(
+            sentiment_counts,
+            names="label",
+        values="count",
+        title=f"{sentiment_coin.capitalize()} Sentiment Distribution",
+        color="label",
+        color_discrete_map={
+            "Positive": "#00ff88",
+            "Negative": "#ff6b6b",
+            "Neutral": "#888888"
+        },
+        template="plotly_dark"
+        )
+        st.plotly_chart(fig_sentiment_pie)
+
+    # ── Latest Headlines Table ──
+    st.markdown("#### Latest Headlines")
+    st.dataframe(
+            coin_sentiment[["headline", "sentiment_label"]]
+            .rename(columns={"headline": "Headline", "sentiment_label": "Sentiment"})
+    )
 st.caption("Dashboard refreshes every 5 minutes")
