@@ -1,9 +1,4 @@
-try:
-    from textblob import TextBlob
-except ImportError:
-    print("Warning: textblob not installed. Install with: pip install textblob")
-    TextBlob = None
-
+from textblob import TextBlob
 from app.services.news_fetcher import fetch_news
 from app.database.connection import get_sqlengine
 from sqlalchemy import text

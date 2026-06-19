@@ -4,6 +4,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../.
 import streamlit as st
 import plotly.express as px
 import pandas as pd
+from streamlit_autorefresh import st_autorefresh
 from app.analytics.analyzer import(
     load_all_data,
     calculate_moving_average,
@@ -37,21 +38,45 @@ st.caption("Live data powered by CoinGecko API")
 df=load_data()
 latest=get_latest(df)
 
-st.subheader("Live Prices")
-cols=st.columns(4)
-coins=["bitcoin","ethereum","solana","ripple"]
-emojis=["₿", "Ξ", "◎", "✕"]
+st.subheader("⚡ Live Prices")
 
-for i,(coin,emoji) in enumerate(zip(coins,emojis)):
-    row=latest[latest["coin"]==coin]
-    if not row.empty:
-        price=row["price"].values[0]
-        change=row["price_change_24h"].values[0]
-        cols[i].metric(label=f"{emoji} {coin.capitalize()}",
-                       value=f"${price:,.2f}",
-                       delta=f"{change:.2f}%",
-                       delta_color="normal"
-                       )
+# Auto-refresh every 2 seconds
+st_autorefresh(interval=2000, key="live_price_refresh")
+
+def load_live_prices():
+    engine = get_sqlengine()
+    query = "SELECT coin, price, updated_at FROM live_prices"
+    df = pd.read_sql(query, engine)
+    return df
+
+live_df = load_live_prices()
+# 'latest' already holds your polling data with 24h change (from earlier in the script)
+
+coin_order = ["bitcoin", "ethereum", "solana", "ripple"]
+emojis = ["₿", "Ξ", "◎", "✕"]
+
+if live_df.empty:
+    st.warning("No live data yet — run ws_listener.py in a separate terminal!")
+else:
+    cols = st.columns(4)
+    for i, (coin, emoji) in enumerate(zip(coin_order, emojis)):
+        live_row = live_df[live_df["coin"] == coin]
+        poll_row = latest[latest["coin"] == coin]
+
+        if not live_row.empty:
+            price = live_row["price"].values[0]
+            updated = live_row["updated_at"].values[0]
+
+            # Get 24h change from polling data if available
+            change = poll_row["price_change_24h"].values[0] if not poll_row.empty else None
+
+            cols[i].metric(
+                label=f"{emoji} {coin.capitalize()}",
+                value=f"${price:,.4f}",
+                delta=f"{change:.2f}%" if change is not None else None
+            )
+            cols[i].caption(f"Updated: {str(updated)[11:19]}")
+
 st.divider()
 
 st.subheader("Price Trends")
